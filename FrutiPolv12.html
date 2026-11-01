@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FrutiVerd - Hort Familiar</title>
+  <style>
+    :root {
+      --primary: #2e7d32;
+      --primary-hover: #1b5e20;
+      --bg: #f4f6f8;
+      --card-bg: #ffffff;
+      --text: #333333;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      background-color: var(--primary);
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    header h1 { margin: 0; font-size: 1.5rem; }
+
+    .cart-btn-header {
+      background-color: white;
+      color: var(--primary);
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    /* Galeria de Fotos */
+    .gallery-section {
+      margin-bottom: 3rem;
+      text-align: center;
+    }
+
+    .gallery-section h2 {
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .gallery-item {
+      background: #eef2f0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: transform 0.2s;
+    }
+
+    .gallery-item:hover {
+      transform: scale(1.02);
+    }
+
+    .gallery-item img {
+      width: 100%;
+      height: 260px;
+      object-fit: cover; 
+      object-position: center top;
+      display: block;
+    }
+
+    .gallery-caption {
+      padding: 1rem;
+      font-weight: bold;
+      color: #555;
+      background: white;
+    }
+
+    /* Catàleg */
+    .catalog-section h2 {
+      color: var(--primary);
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .filters {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .filter-btn {
+      background: white;
+      border: 1px solid #ccc;
+      padding: 0.5rem 1rem;
+      border-radius: 15px;
+      cursor: pointer;
+    }
+
+    .filter-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .card .emoji { font-size: 3.5rem; margin-bottom: 0.5rem; }
+    .card h3 { margin: 0.3rem 0; font-size: 1.1rem; }
+    .card .price { color: var(--primary); font-weight: bold; margin-bottom: 0.3rem; }
+    .card .stock { font-size: 0.85rem; color: #666; margin-bottom: 0.8rem; }
+
+    .quantity-selector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .quantity-selector input {
+      width: 70px;
+      padding: 0.3rem;
+      text-align: center;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .btn-add {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+      font-weight: bold;
+    }
+
+    .btn-add:hover { background: var(--primary-hover); }
+
+    /* Modal del Carret */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 0.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+
+    .form-group label {
+      font-weight: bold;
+      margin-bottom: 0.3rem;
+      font-size: 0.9rem;
+    }
+
+    .form-group input {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .btn-submit, .btn-action {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem;
+      border-radius: 6px;
+      width: 100%;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1rem;
+      margin-top: 1rem;
+    }
+
+    .btn-close {
+      background: #888;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      float: right;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🌱 FrutiVerd Hort</h1>
+    <button class="cart-btn-header" onclick="openCart()">
+      🛒 Carret (<span id="cart-count">0</span>)
+    </button>
+  </header>
+
+  <div class="container">
+
+    <!-- Secció de Galeria de Fotos -->
+    <section class="gallery-section">
+      <h2>El nostre hort de proximitat a Santako</h2>
+      <div class="gallery-grid">
+        
+        <div class="gallery-item">
+          <img src="https://lh3.googleusercontent.com/d/1N2xlbHNdXRHo9aZYiqo0DO5deBUCrH0N" alt="Planters de l'hort">
+          <div class="gallery-caption">Cuidant els planters</div>
+        </div>
+
+        <div class="gallery-item">
+          <img src="https://lh3.googleusercontent.com/d/1iAqGMmqEHhy1IwHuGwmUmeS_2DkLz1Hz" alt="Treball en equip a l'hort">
+          <div class="gallery-caption">Treball en equip</div>
+        </div>
+
+        <div class="gallery-item">
+          <img src="https://lh3.googleusercontent.com/d/1fgxq8QueEQAomGTnMqCX6MSKY0frL-JO" alt="Preparant llavors i planters">
+          <div class="gallery-caption">Preparant les llavors i planters amb il·lusió</div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Catàleg de Productes -->
+    <section class="catalog-section">
+      <h2>Els nostres Productes Frescos</h2>
+      
+      <div class="filters">
+        <button class="filter-btn active" onclick="filterProducts('todos', this)">Tots</button>
+        <button class="filter-btn" onclick="filterProducts('fruta', this)">🍎 Fruites</button>
+        <button class="filter-btn" onclick="filterProducts('verdura', this)">🥬 Verdures</button>
+        <button class="filter-btn" onclick="filterProducts('especia', this)">🌿 Espècies</button>
+      </div>
+
+      <div id="product-grid" class="grid">
+        <p style="grid-column: 1/-1; text-align: center; color: #666;">Carregant productes de l'hort...</p>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Modal del Carret de Compra -->
+  <div id="cart-modal" class="modal-overlay">
+    <div class="modal">
+      <button class="btn-close" onclick="closeCart()">✕ Tancar</button>
+      <h2>El teu Carret de Compra</h2>
+      
+      <div id="cart-view-section">
+        <div id="cart-items"></div>
+        <h3 id="cart-total" style="text-align: right; color: var(--primary);">Total: 0.00 €</h3>
+        <button id="btn-proceed" class="btn-action" onclick="showCheckoutForm()">Finalitzar Comanda</button>
+      </div>
+
+      <form id="checkout-form-section" style="display: none;" onsubmit="processOrder(event)">
+        <h3>Dades de Lliurament</h3>
+        
+        <div class="form-group">
+          <label for="comprador">Nom i Cognoms *</label>
+          <input type="text" id="comprador" required placeholder="Ex. Maria Garcia">
+        </div>
+
+        <div class="form-group">
+          <label for="email">Correu Electrònic *</label>
+          <input type="email" id="email" required placeholder="exemple@correu.com">
+        </div>
+
+        <div class="form-group">
+          <label for="direccion">Adreça de Lliurament *</label>
+          <input type="text" id="direccion" required placeholder="Carrer, número, pis...">
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" class="btn-close" style="float:none; flex: 1; background: #666;" onclick="showCartView()">Tornar</button>
+          <button type="submit" id="btn-send" class="btn-submit" style="margin-top:0; flex: 2;">Confirmar Comanda</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://sheetdb.io/api/v1/ju2kefi4p2i74';
+    let products = [];
+    let cart = [];
+
+    async function loadProducts() {
+      const grid = document.getElementById('product-grid');
+      try {
+        const res = await fetch(`${API_URL}?sheet=productos`);
+        if (!res.ok) throw new Error('Error en la resposta del servidor');
+        
+        const data = await res.json();
+        products = data.filter(p => {
+          const activo = String(p.activo || '').trim().toUpperCase();
+          const disponible = String(p.disponible || p.disponibilidad || '').trim().toUpperCase();
+          return activo === 'TRUE' && disponible === 'TRUE';
+        });
+
+        if (products.length === 0) {
+          grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #d9534f;">No hi ha productes actius o disponibles.</p>';
+          return;
+        }
+
+        renderProducts(products);
+      } catch (err) {
+        console.error('Error carregant productes:', err);
+        grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #d9534f;">❌ Error en connectar amb Google Sheets.</p>';
+      }
+    }
+
+    function renderProducts(list) {
+      const grid = document.getElementById('product-grid');
+      grid.innerHTML = list.map(p => `
+        <div class="card">
+          <div class="emoji">${p.emoji || '🌱'}</div>
+          <h3>${p.nombre}</h3>
+          <div class="price">${p.precio_kg} € / kg</div>
+          <div class="stock">Estoc: ${p.stock_gramos}g</div>
+          <div class="quantity-selector">
+            <input type="number" id="qty-${p.id}" value="250" step="50" min="50" max="${p.stock_gramos}"> <span>g</span>
+          </div>
+          <button class="btn-add" onclick="addToCart('${p.id}')">Afegir al Carret</button>
+        </div>
+      `).join('');
+    }
+
+    function filterProducts(cat, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (cat === 'todos') {
+        renderProducts(products);
+      } else {
+        renderProducts(products.filter(p => String(p.categoria).toLowerCase().trim() === cat));
+      }
+    }
+
+    function addToCart(productId) {
+      const product = products.find(p => String(p.id) === String(productId));
+      if (!product) return;
+
+      const qtyInput = document.getElementById(`qty-${productId}`);
+      const gramsSeleccionats = parseInt(qtyInput.value) || 250;
+
+      const existing = cart.find(item => String(item.product.id) === String(productId));
+
+      if (existing) {
+        existing.gramos += gramsSeleccionats;
+      } else {
+        cart.push({ product: product, gramos: gramsSeleccionats });
+      }
+
+      updateCartUI();
+      alert(`¡${product.nombre} (${gramsSeleccionats}g) afegit al carret!`);
+    }
+
+    function updateCartUI() {
+      const totalItemsCount = cart.reduce((sum, item) => sum + 1, 0);
+      document.getElementById('cart-count').innerText = totalItemsCount;
+      const itemsContainer = document.getElementById('cart-items');
+      const btnProceed = document.getElementById('btn-proceed');
+      let total = 0;
+
+      if (cart.length === 0) {
+        itemsContainer.innerHTML = '<p>El carret està buit.</p>';
+        document.getElementById('cart-total').innerText = 'Total: 0.00 €';
+        btnProceed.style.display = 'none';
+        return;
+      }
+
+      btnProceed.style.display = 'block';
+      itemsContainer.innerHTML = cart.map((item, index) => {
+        const itemTotal = (item.product.precio_kg * item.gramos) / 1000;
+        total += itemTotal;
+        return `
+          <div class="cart-item">
+            <div>
+              <strong>${item.product.emoji} ${item.product.nombre}</strong><br>
+              <small>${item.gramos}g - ${itemTotal.toFixed(2)} €</small>
+            </div>
+            <div>
+              <button onclick="removeFromCart(${index})" style="background:none;border:none;color:red;cursor:pointer;font-size:1.1rem;" title="Eliminar">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('cart-total').innerText = `Total: ${total.toFixed(2)} €`;
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      updateCartUI();
+    }
+
+    function openCart() {
+      showCartView();
+      document.getElementById('cart-modal').classList.add('open');
+    }
+
+    function closeCart() {
+      document.getElementById('cart-modal').classList.remove('open');
+    }
+
+    function showCheckoutForm() {
+      if (cart.length === 0) return;
+      document.getElementById('cart-view-section').style.display = 'none';
+      document.getElementById('checkout-form-section').style.display = 'block';
+    }
+
+    function showCartView() {
+      document.getElementById('checkout-form-section').style.display = 'none';
+      document.getElementById('cart-view-section').style.display = 'block';
+    }
+
+    async function processOrder(event) {
+      event.preventDefault();
+
+      if (cart.length === 0) {
+        alert('Si us plau, afegeix almenys un producte al carret.');
+        return;
+      }
+
+      const comprador = document.getElementById('comprador').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const direccion = document.getElementById('direccion').value.trim();
+      const btnSend = document.getElementById('btn-send');
+
+      btnSend.disabled = true;
+      btnSend.innerText = 'Processant...';
+
+      const pedidoId = Date.now();
+      const fecha = new Date().toLocaleString();
+
+      try {
+        for (const item of cart) {
+          const precioLinea = ((item.product.precio_kg * item.gramos) / 1000).toFixed(2);
+          
+          const payload = {
+            data: [{
+              id: pedidoId,
+              comprador: comprador,
+              email: email,
+              direccion: direccion,
+              producto: item.product.nombre,
+              emoji: item.product.emoji,
+              gramos: item.gramos,
+              precio: precioLinea,
+              fecha: fecha
+            }]
+          };
+
+          await fetch(`${API_URL}?sheet=pedidos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        }
+
+        alert('¡Comanda realitzada amb èxit! Moltes gràcies per confiar en FrutiVerd.');
+        cart = [];
+        updateCartUI();
+        closeCart();
+        document.getElementById('checkout-form-section').reset();
+        showCartView();
+        loadProducts();
+
+      } catch (err) {
+        alert('Hi ha hagut un error al desar la comanda. Torna-ho a provar.');
+        console.error(err);
+      } finally {
+        btnSend.disabled = false;
+        btnSend.innerText = 'Confirmar Comanda';
+      }
+    }
+
+    loadProducts();
+  </script>
+</body>
+</html>
