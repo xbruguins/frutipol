@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ca">
 <head>
   <meta charset="UTF-8">
@@ -406,8 +406,16 @@
 
       const qtyInput = document.getElementById(`qty-${productId}`);
       const gramsSeleccionats = parseInt(qtyInput.value) || 250;
+      const stockDisponible = parseInt(product.stock_gramos) || 0;
 
+      // Comprovar quantitat ja existent al carret per aquest producte
       const existing = cart.find(item => String(item.product.id) === String(productId));
+      const gramsActualsEnCarret = existing ? existing.gramos : 0;
+
+      if (gramsActualsEnCarret + gramsSeleccionats > stockDisponible) {
+        alert(`⚠️ No pots afegir aquesta quantitat. Estoc disponible: ${stockDisponible}g (ja portes ${gramsActualsEnCarret}g al carret).`);
+        return;
+      }
 
       if (existing) {
         existing.gramos += gramsSeleccionats;
@@ -501,7 +509,8 @@
         for (const item of cart) {
           const precioLinea = ((item.product.precio_kg * item.gramos) / 1000).toFixed(2);
           
-          const payload = {
+          // 1. Guardar la comanda a la pestanya 'pedidos'
+          const payloadPedido = {
             data: [{
               id: pedidoId,
               comprador: comprador,
@@ -518,20 +527,36 @@
           await fetch(`${API_URL}?sheet=pedidos`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payloadPedido)
+          });
+
+          // 2. Calcular i actualitzar el descompte d'estoc a la pestanya 'productos'
+          const stockActual = parseInt(item.product.stock_gramos) || 0;
+          const nuevoStock = Math.max(0, stockActual - item.gramos);
+
+          const payloadStock = {
+            data: {
+              stock_gramos: nuevoStock
+            }
+          };
+
+          await fetch(`${API_URL}/id/${item.product.id}?sheet=productos`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payloadStock)
           });
         }
 
-        alert('¡Comanda realitzada amb èxit! Moltes gràcies per confiar en FrutiVerd.');
+        alert('¡Comanda realitzada amb èxit i estoc actualitzat! Moltes gràcies.');
         cart = [];
         updateCartUI();
         closeCart();
         document.getElementById('checkout-form-section').reset();
         showCartView();
-        loadProducts();
+        loadProducts(); // Recarrega els productes amb el nou estoc actualitzat
 
       } catch (err) {
-        alert('Hi ha hagut un error al desar la comanda. Torna-ho a provar.');
+        alert('Hi ha hagut un error al processar la comanda. Torna-ho a provar.');
         console.error(err);
       } finally {
         btnSend.disabled = false;
