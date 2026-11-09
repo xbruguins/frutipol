@@ -374,25 +374,15 @@
       }
     }
 
+    // Detecta si es ven per unitats mirant si a la columna 'tipo' posa 'un' o similar
     function esProductePerUnitats(p) {
-      const tipoCol = String(p.tipo || p.unidad || '').toLowerCase().trim();
-      const nom = String(p.nombre || '').toLowerCase().trim();
-      
-      return tipoCol === 'un' || 
-             tipoCol === 'ud' || 
-             tipoCol.includes('unitat') || 
-             nom.includes('enciam') || 
-             nom.includes('lechuga');
+      const tipoCol = String(p.tipo || '').toLowerCase().trim();
+      return tipoCol === 'un' || tipoCol.includes('ud') || tipoCol.includes('unitat');
     }
 
+    // Llegeix directament de la columna 'precio_kg' del Sheets i arregla les comes
     function extraerPrecio(p) {
-      // Comprova totes les possibles variants de noms de columna de preu al Sheets
-      let val = p.precio_kg !== undefined ? p.precio_kg : 
-                (p.precio !== undefined ? p.precio : 
-                (p.preu !== undefined ? p.preu : 
-                (p.Preu !== undefined ? p.Preu : 
-                (p.PRECIO !== undefined ? p.PRECIO : 0))));
-      
+      let val = p.precio_kg !== undefined ? p.precio_kg : 0;
       if (typeof val === 'string') {
         val = val.replace(',', '.');
       }
@@ -562,7 +552,7 @@
       const email = document.getElementById('email').value.trim();
       const direccion = document.getElementById('direccion').value.trim();
 
-      // VALIDACIÓ ESTRICTA: No s'envia res ni es dispara correu si falta cap dada del client
+      // VALIDACIÓ ESTRICTA: No s'envia res si falta cap dada del client
       if (!comprador || !email || !direccion) {
         alert('⚠️ Per favor, omple tots els camps obligatoris del formulari de client (Nom, Correu i Adreça) abans de confirmar.');
         return;
