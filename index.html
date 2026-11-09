@@ -374,16 +374,21 @@
       }
     }
 
+    // Funció robusta per detectar si es ven per unitats segons la columna 'tipo' o el nom del producte
     function esProductePerUnitats(p) {
-      const nom = String(p.nombre || '').toLowerCase();
-      const tipo = String(p.tipo || '').toLowerCase();
-      return tipo === 'ud' || tipo === 'unitats' || nom.includes('enciam') || nom.includes('lechuga');
+      const tipoCol = String(p.tipo || p.unidad || '').toLowerCase().trim();
+      const nom = String(p.nombre || '').toLowerCase().trim();
+      
+      return tipoCol === 'un' || 
+             tipoCol === 'ud' || 
+             tipoCol.includes('unitat') || 
+             nom.includes('enciam') || 
+             nom.includes('lechuga');
     }
 
     function renderProducts(list) {
       const grid = document.getElementById('product-grid');
       grid.innerHTML = list.map(p => {
-        // Netejar i llegir preus amb comes o punts
         let rawPrecio = p.precio_kg !== undefined ? p.precio_kg : (p.precio !== undefined ? p.precio : 0);
         if (typeof rawPrecio === 'string') rawPrecio = rawPrecio.replace(',', '.');
         const precio = parseFloat(rawPrecio) || 0;
