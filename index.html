@@ -374,29 +374,31 @@
       }
     }
 
-    // Funció auxiliar per saber si es ven per unitats (com l'enciam) o per pes (kg)
     function esProductePerUnitats(p) {
-      const nom = String(p.nombre || p.name || '').toLowerCase();
-      const unidad = String(p.unidad || p.tipo || '').toLowerCase();
-      return unidad === 'ud' || unidad === 'unitats' || nom.includes('enciam') || nom.includes('lechuga');
+      const nom = String(p.nombre || '').toLowerCase();
+      const tipo = String(p.tipo || '').toLowerCase();
+      return tipo === 'ud' || tipo === 'unitats' || nom.includes('enciam') || nom.includes('lechuga');
     }
 
     function renderProducts(list) {
       const grid = document.getElementById('product-grid');
       grid.innerHTML = list.map(p => {
-        const precio = p.precio_kg !== undefined ? p.precio_kg : (p.precio !== undefined ? p.precio : (p.preu !== undefined ? p.preu : 0));
-        const stock = p.stock_gramos !== undefined ? p.stock_gramos : (p.stock !== undefined ? p.stock : 10);
+        // Netejar i llegir preus amb comes o punts
+        let rawPrecio = p.precio_kg !== undefined ? p.precio_kg : (p.precio !== undefined ? p.precio : 0);
+        if (typeof rawPrecio === 'string') rawPrecio = rawPrecio.replace(',', '.');
+        const precio = parseFloat(rawPrecio) || 0;
+
+        const stock = parseInt(p.stock_gramos !== undefined ? p.stock_gramos : 10) || 0;
         const nombreProd = p.nombre || 'Producte';
         const emojiProd = p.emoji || '🌱';
         const porUnidades = esProductePerUnitats(p);
 
         if (porUnidades) {
-          // Vista per Unitats (Ex: Enciams)
           return `
             <div class="card">
               <div class="emoji">${emojiProd}</div>
               <h3>${nombreProd}</h3>
-              <div class="price">${precio} € / ud</div>
+              <div class="price">${precio.toFixed(2)} € / ud</div>
               <div class="stock">Estoc: ${stock} unitats</div>
               <div class="quantity-selector">
                 <input type="number" id="qty-${p.id}" value="1" step="1" min="1" max="${stock}"> <span>ud</span>
@@ -405,12 +407,11 @@
             </div>
           `;
         } else {
-          // Vista per Pes (Grams / Kg)
           return `
             <div class="card">
               <div class="emoji">${emojiProd}</div>
               <h3>${nombreProd}</h3>
-              <div class="price">${precio} € / kg</div>
+              <div class="price">${precio.toFixed(2)} € / kg</div>
               <div class="stock">Estoc: ${stock}g</div>
               <div class="quantity-selector">
                 <input type="number" id="qty-${p.id}" value="250" step="50" min="50" max="${stock}"> <span>g</span>
@@ -439,7 +440,7 @@
       const qtyInput = document.getElementById(`qty-${productId}`);
       const porUnidades = esProductePerUnitats(product);
       const cantidadSeleccionada = parseInt(qtyInput.value) || (porUnidades ? 1 : 250);
-      const stockDisponible = parseInt(product.stock_gramos !== undefined ? product.stock_gramos : (product.stock !== undefined ? product.stock : 100)) || 0;
+      const stockDisponible = parseInt(product.stock_gramos !== undefined ? product.stock_gramos : 100) || 0;
 
       const existing = cart.find(item => String(item.product.id) === String(productId));
       const cantidadActualEnCarret = existing ? existing.cantidad : 0;
@@ -477,7 +478,10 @@
 
       btnProceed.style.display = 'block';
       itemsContainer.innerHTML = cart.map((item, index) => {
-        const precio = item.product.precio_kg !== undefined ? item.product.precio_kg : (item.product.precio !== undefined ? item.product.precio : 0);
+        let rawPrecio = item.product.precio_kg !== undefined ? item.product.precio_kg : (item.product.precio !== undefined ? item.product.precio : 0);
+        if (typeof rawPrecio === 'string') rawPrecio = rawPrecio.replace(',', '.');
+        const precio = parseFloat(rawPrecio) || 0;
+
         let itemTotal = 0;
         let detalleTexto = '';
 
@@ -555,7 +559,10 @@
 
       try {
         for (const item of cart) {
-          const precio = item.product.precio_kg !== undefined ? item.product.precio_kg : (item.product.precio !== undefined ? item.product.precio : 0);
+          let rawPrecio = item.product.precio_kg !== undefined ? item.product.precio_kg : 0;
+          if (typeof rawPrecio === 'string') rawPrecio = rawPrecio.replace(',', '.');
+          const precio = parseFloat(rawPrecio) || 0;
+
           let precioLinea = 0;
           let cantidadTextoParaPedido = '';
 
@@ -579,7 +586,7 @@
               direccion: direccion,
               producto: nombreProd,
               emoji: emojiProd,
-              gramos: cantidadTextoParaPedido, // S'aprofita la columna per desar grams o unitats
+              gramos: cantidadTextoParaPedido,
               precio: precioLinea,
               fecha: fecha
             }]
@@ -591,8 +598,8 @@
             body: JSON.stringify(payloadPedido)
           });
 
-          // 2. Calcular i actualitzar el descompte d'estoc a la pestanya 'productos'
-          const stockActual = parseInt(item.product.stock_gramos !== undefined ? item.product.stock_gramos : (item.product.stock !== undefined ? item.product.stock : 100)) || 0;
+          // 2. Actualitzar estoc a la pestanya 'productos'
+          const stockActual = parseInt(item.product.stock_gramos !== undefined ? item.product.stock_gramos : 100) || 0;
           const nuevoStock = Math.max(0, stockActual - item.cantidad);
 
           const payloadStock = {
