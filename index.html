@@ -363,7 +363,7 @@
         });
 
         if (products.length === 0) {
-          grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #d9534f;">No hi ha productes actius o disposables.</p>';
+          grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #d9534f;">No hi ha productes actius o disponibles.</p>';
           return;
         }
 
@@ -385,14 +385,24 @@
              nom.includes('lechuga');
     }
 
+    function extraerPrecio(p) {
+      // Comprova totes les possibles variants de noms de columna de preu al Sheets
+      let val = p.precio_kg !== undefined ? p.precio_kg : 
+                (p.precio !== undefined ? p.precio : 
+                (p.preu !== undefined ? p.preu : 
+                (p.Preu !== undefined ? p.Preu : 
+                (p.PRECIO !== undefined ? p.PRECIO : 0))));
+      
+      if (typeof val === 'string') {
+        val = val.replace(',', '.');
+      }
+      return parseFloat(val) || 0;
+    }
+
     function renderProducts(list) {
       const grid = document.getElementById('product-grid');
       grid.innerHTML = list.map(p => {
-        // Lectura flexible del preu de qualsevol columna (precio_kg, precio, preu...)
-        let rawPrecio = p.precio_kg !== undefined ? p.precio_kg : (p.precio !== undefined ? p.precio : (p.Preu !== undefined ? p.Preu : (p.preu !== undefined ? p.preu : (p.PRECIO !== undefined ? p.PRECIO : 0))));
-        if (typeof rawPrecio === 'string') rawPrecio = rawPrecio.replace(',', '.');
-        const precio = parseFloat(rawPrecio) || 0;
-
+        const precio = extraerPrecio(p);
         const stock = parseInt(p.stock_gramos !== undefined ? p.stock_gramos : 10) || 0;
         const nombreProd = p.nombre || 'Producte';
         const emojiProd = p.emoji || '🌱';
@@ -483,10 +493,7 @@
 
       btnProceed.style.display = 'block';
       itemsContainer.innerHTML = cart.map((item, index) => {
-        let rawPrecio = item.product.precio_kg !== undefined ? item.product.precio_kg : (item.product.precio !== undefined ? item.product.precio : (item.product.Preu !== undefined ? item.product.Preu : (item.product.preu !== undefined ? item.product.preu : 0)));
-        if (typeof rawPrecio === 'string') rawPrecio = rawPrecio.replace(',', '.');
-        const precio = parseFloat(rawPrecio) || 0;
-
+        const precio = extraerPrecio(item.product);
         let itemTotal = 0;
         let detalleTexto = '';
 
@@ -555,7 +562,7 @@
       const email = document.getElementById('email').value.trim();
       const direccion = document.getElementById('direccion').value.trim();
 
-      // VALIDACIÓ ESTRICTA: No s'envia res si falta cap dada del client (evita correus buits)
+      // VALIDACIÓ ESTRICTA: No s'envia res ni es dispara correu si falta cap dada del client
       if (!comprador || !email || !direccion) {
         alert('⚠️ Per favor, omple tots els camps obligatoris del formulari de client (Nom, Correu i Adreça) abans de confirmar.');
         return;
@@ -570,10 +577,7 @@
 
       try {
         for (const item of cart) {
-          let rawPrecio = item.product.precio_kg !== undefined ? item.product.precio_kg : (item.product.precio !== undefined ? item.product.precio : 0);
-          if (typeof rawPrecio === 'string') rawPrecio = rawPrecio.replace(',', '.');
-          const precio = parseFloat(rawPrecio) || 0;
-
+          const precio = extraerPrecio(item.product);
           let precioLinea = 0;
           let cantidadTextoParaPedido = '';
 
