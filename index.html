@@ -363,7 +363,7 @@
         });
 
         if (products.length === 0) {
-          grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #d9534f;">No hi ha productes actius o disponibles.</p>';
+          grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #d9534f;">No hi ha productes actius o disposables.</p>';
           return;
         }
 
@@ -388,7 +388,8 @@
     function renderProducts(list) {
       const grid = document.getElementById('product-grid');
       grid.innerHTML = list.map(p => {
-        let rawPrecio = p.precio_kg !== undefined ? p.precio_kg : (p.precio !== undefined ? p.precio : 0);
+        // Lectura flexible del preu de qualsevol columna (precio_kg, precio, preu...)
+        let rawPrecio = p.precio_kg !== undefined ? p.precio_kg : (p.precio !== undefined ? p.precio : (p.Preu !== undefined ? p.Preu : (p.preu !== undefined ? p.preu : (p.PRECIO !== undefined ? p.PRECIO : 0))));
         if (typeof rawPrecio === 'string') rawPrecio = rawPrecio.replace(',', '.');
         const precio = parseFloat(rawPrecio) || 0;
 
@@ -482,7 +483,7 @@
 
       btnProceed.style.display = 'block';
       itemsContainer.innerHTML = cart.map((item, index) => {
-        let rawPrecio = item.product.precio_kg !== undefined ? item.product.precio_kg : (item.product.precio !== undefined ? item.product.precio : 0);
+        let rawPrecio = item.product.precio_kg !== undefined ? item.product.precio_kg : (item.product.precio !== undefined ? item.product.precio : (item.product.Preu !== undefined ? item.product.Preu : (item.product.preu !== undefined ? item.product.preu : 0)));
         if (typeof rawPrecio === 'string') rawPrecio = rawPrecio.replace(',', '.');
         const precio = parseFloat(rawPrecio) || 0;
 
@@ -542,7 +543,6 @@
       document.getElementById('cart-view-section').style.display = 'block';
     }
 
-    // PROCESSAMENT DE LA COMANDA: NOMÉS S'ENVIA SI EL FORMULARI ESTÀ PLè I VALIDAT
     async function processOrder(event) {
       event.preventDefault();
 
@@ -555,7 +555,7 @@
       const email = document.getElementById('email').value.trim();
       const direccion = document.getElementById('direccion').value.trim();
 
-      // VALIDACIÓ ESTRICTA: Si falta algun camp del formulari, no s'envia res ni es dispara cap correu
+      // VALIDACIÓ ESTRICTA: No s'envia res si falta cap dada del client (evita correus buits)
       if (!comprador || !email || !direccion) {
         alert('⚠️ Per favor, omple tots els camps obligatoris del formulari de client (Nom, Correu i Adreça) abans de confirmar.');
         return;
@@ -570,7 +570,7 @@
 
       try {
         for (const item of cart) {
-          let rawPrecio = item.product.precio_kg !== undefined ? item.product.precio_kg : 0;
+          let rawPrecio = item.product.precio_kg !== undefined ? item.product.precio_kg : (item.product.precio !== undefined ? item.product.precio : 0);
           if (typeof rawPrecio === 'string') rawPrecio = rawPrecio.replace(',', '.');
           const precio = parseFloat(rawPrecio) || 0;
 
@@ -588,7 +588,6 @@
           const nombreProd = item.product.nombre || 'Producte';
           const emojiProd = item.product.emoji || '🌱';
           
-          // 1. Guardar la comanda a la pestanya 'pedidos' (Només s'executa amb el formulari emplenat)
           const payloadPedido = {
             data: [{
               id: pedidoId,
@@ -609,7 +608,6 @@
             body: JSON.stringify(payloadPedido)
           });
 
-          // 2. Actualitzar estoc a la pestanya 'productos'
           const stockActual = parseInt(item.product.stock_gramos !== undefined ? item.product.stock_gramos : 100) || 0;
           const nuevoStock = Math.max(0, stockActual - item.cantidad);
 
@@ -626,7 +624,7 @@
           });
         }
 
-        alert('¡Comanda realitzada amb èxit i estoc actualitzat! Ja s’han enviat les notificacions de manera correcta.');
+        alert('¡Comanda realitzada amb èxit i estoc actualitzat! Moltes gràcies.');
         cart = [];
         updateCartUI();
         closeCart();
