@@ -374,15 +374,15 @@
       }
     }
 
-    // Detecta si es ven per unitats mirant si a la columna 'tipo' posa 'un' o similar
+    // Detecta si es ven per unitats segons la columna 'tipo'
     function esProductePerUnitats(p) {
       const tipoCol = String(p.tipo || '').toLowerCase().trim();
       return tipoCol === 'un' || tipoCol.includes('ud') || tipoCol.includes('unitat');
     }
 
-    // Llegeix directament de la columna 'precio_kg' del Sheets i arregla les comes
+    // Extreu i neteja el preu de la columna precio_kg (substituint comes per punts per a JavaScript)
     function extraerPrecio(p) {
-      let val = p.precio_kg !== undefined ? p.precio_kg : 0;
+      let val = p.precio_kg !== undefined && p.precio_kg !== "" ? p.precio_kg : 0;
       if (typeof val === 'string') {
         val = val.replace(',', '.');
       }
