@@ -374,20 +374,52 @@
       }
     }
 
+    // Funció auxiliar per saber si es ven per unitats (com l'enciam) o per pes (kg)
+    function esProductePerUnitats(p) {
+      const nom = String(p.nombre || p.name || '').toLowerCase();
+      const unidad = String(p.unidad || p.tipo || '').toLowerCase();
+      return unidad === 'ud' || unidad === 'unitats' || nom.includes('enciam') || nom.includes('lechuga');
+    }
+
     function renderProducts(list) {
       const grid = document.getElementById('product-grid');
-      grid.innerHTML = list.map(p => `
-        <div class="card">
-          <div class="emoji">${p.emoji || '🌱'}</div>
-          <h3>${p.nombre}</h3>
-          <div class="price">${p.precio_kg} € / kg</div>
-          <div class="stock">Estoc: ${p.stock_gramos}g</div>
-          <div class="quantity-selector">
-            <input type="number" id="qty-${p.id}" value="250" step="50" min="50" max="${p.stock_gramos}"> <span>g</span>
-          </div>
-          <button class="btn-add" onclick="addToCart('${p.id}')">Afegir al Carret</button>
-        </div>
-      `).join('');
+      grid.innerHTML = list.map(p => {
+        const precio = p.precio_kg !== undefined ? p.precio_kg : (p.precio !== undefined ? p.precio : (p.preu !== undefined ? p.preu : 0));
+        const stock = p.stock_gramos !== undefined ? p.stock_gramos : (p.stock !== undefined ? p.stock : 10);
+        const nombreProd = p.nombre || 'Producte';
+        const emojiProd = p.emoji || '🌱';
+        const porUnidades = esProductePerUnitats(p);
+
+        if (porUnidades) {
+          // Vista per Unitats (Ex: Enciams)
+          return `
+            <div class="card">
+              <div class="emoji">${emojiProd}</div>
+              <h3>${nombreProd}</h3>
+              <div class="price">${precio} € / ud</div>
+              <div class="stock">Estoc: ${stock} unitats</div>
+              <div class="quantity-selector">
+                <input type="number" id="qty-${p.id}" value="1" step="1" min="1" max="${stock}"> <span>ud</span>
+              </div>
+              <button class="btn-add" onclick="addToCart('${p.id}')">Afegir al Carret</button>
+            </div>
+          `;
+        } else {
+          // Vista per Pes (Grams / Kg)
+          return `
+            <div class="card">
+              <div class="emoji">${emojiProd}</div>
+              <h3>${nombreProd}</h3>
+              <div class="price">${precio} € / kg</div>
+              <div class="stock">Estoc: ${stock}g</div>
+              <div class="quantity-selector">
+                <input type="number" id="qty-${p.id}" value="250" step="50" min="50" max="${stock}"> <span>g</span>
+              </div>
+              <button class="btn-add" onclick="addToCart('${p.id}')">Afegir al Carret</button>
+            </div>
+          `;
+        }
+      }).join('');
     }
 
     function filterProducts(cat, btn) {
@@ -396,7 +428,7 @@
       if (cat === 'todos') {
         renderProducts(products);
       } else {
-        renderProducts(products.filter(p => String(p.categoria).toLowerCase().trim() === cat));
+        renderProducts(products.filter(p => String(p.categoria || '').toLowerCase().trim() === cat));
       }
     }
 
@@ -405,26 +437,28 @@
       if (!product) return;
 
       const qtyInput = document.getElementById(`qty-${productId}`);
-      const gramsSeleccionats = parseInt(qtyInput.value) || 250;
-      const stockDisponible = parseInt(product.stock_gramos) || 0;
+      const porUnidades = esProductePerUnitats(product);
+      const cantidadSeleccionada = parseInt(qtyInput.value) || (porUnidades ? 1 : 250);
+      const stockDisponible = parseInt(product.stock_gramos !== undefined ? product.stock_gramos : (product.stock !== undefined ? product.stock : 100)) || 0;
 
-      // Comprovar quantitat ja existent al carret per aquest producte
       const existing = cart.find(item => String(item.product.id) === String(productId));
-      const gramsActualsEnCarret = existing ? existing.gramos : 0;
+      const cantidadActualEnCarret = existing ? existing.cantidad : 0;
 
-      if (gramsActualsEnCarret + gramsSeleccionats > stockDisponible) {
-        alert(`⚠️ No pots afegir aquesta quantitat. Estoc disponible: ${stockDisponible}g (ja portes ${gramsActualsEnCarret}g al carret).`);
+      if (cantidadActualEnCarret + cantidadSeleccionada > stockDisponible) {
+        alert(`⚠️ No pots afegir aquesta quantitat. Estoc disponible: ${stockDisponible} ${porUnidades ? 'unitats' : 'g'}.`);
         return;
       }
 
       if (existing) {
-        existing.gramos += gramsSeleccionats;
+        existing.cantidad += cantidadSeleccionada;
       } else {
-        cart.push({ product: product, gramos: gramsSeleccionats });
+        cart.push({ product: product, cantidad: cantidadSeleccionada, porUnidades: porUnidades });
       }
 
       updateCartUI();
-      alert(`¡${product.nombre} (${gramsSeleccionats}g) afegit al carret!`);
+      const nombreProd = product.nombre || 'Producte';
+      const unidadTexto = porUnidades ? `${cantidadSeleccionada} ud(s)` : `${cantidadSeleccionada}g`;
+      alert(`¡${nombreProd} (${unidadTexto}) afegit al carret!`);
     }
 
     function updateCartUI() {
@@ -443,13 +477,27 @@
 
       btnProceed.style.display = 'block';
       itemsContainer.innerHTML = cart.map((item, index) => {
-        const itemTotal = (item.product.precio_kg * item.gramos) / 1000;
+        const precio = item.product.precio_kg !== undefined ? item.product.precio_kg : (item.product.precio !== undefined ? item.product.precio : 0);
+        let itemTotal = 0;
+        let detalleTexto = '';
+
+        if (item.porUnidades) {
+          itemTotal = precio * item.cantidad;
+          detalleTexto = `${item.cantidad} unitat(s) - ${itemTotal.toFixed(2)} €`;
+        } else {
+          itemTotal = (precio * item.cantidad) / 1000;
+          detalleTexto = `${item.cantidad}g - ${itemTotal.toFixed(2)} €`;
+        }
+
         total += itemTotal;
+        const nombreProd = item.product.nombre || 'Producte';
+        const emojiProd = item.product.emoji || '🌱';
+
         return `
           <div class="cart-item">
             <div>
-              <strong>${item.product.emoji} ${item.product.nombre}</strong><br>
-              <small>${item.gramos}g - ${itemTotal.toFixed(2)} €</small>
+              <strong>${emojiProd} ${nombreProd}</strong><br>
+              <small>${detalleTexto}</small>
             </div>
             <div>
               <button onclick="removeFromCart(${index})" style="background:none;border:none;color:red;cursor:pointer;font-size:1.1rem;" title="Eliminar">🗑️</button>
@@ -507,7 +555,20 @@
 
       try {
         for (const item of cart) {
-          const precioLinea = ((item.product.precio_kg * item.gramos) / 1000).toFixed(2);
+          const precio = item.product.precio_kg !== undefined ? item.product.precio_kg : (item.product.precio !== undefined ? item.product.precio : 0);
+          let precioLinea = 0;
+          let cantidadTextoParaPedido = '';
+
+          if (item.porUnidades) {
+            precioLinea = (precio * item.cantidad).toFixed(2);
+            cantidadTextoParaPedido = `${item.cantidad} unitats`;
+          } else {
+            precioLinea = ((precio * item.cantidad) / 1000).toFixed(2);
+            cantidadTextoParaPedido = `${item.cantidad}g`;
+          }
+
+          const nombreProd = item.product.nombre || 'Producte';
+          const emojiProd = item.product.emoji || '🌱';
           
           // 1. Guardar la comanda a la pestanya 'pedidos'
           const payloadPedido = {
@@ -516,9 +577,9 @@
               comprador: comprador,
               email: email,
               direccion: direccion,
-              producto: item.product.nombre,
-              emoji: item.product.emoji,
-              gramos: item.gramos,
+              producto: nombreProd,
+              emoji: emojiProd,
+              gramos: cantidadTextoParaPedido, // S'aprofita la columna per desar grams o unitats
               precio: precioLinea,
               fecha: fecha
             }]
@@ -531,8 +592,8 @@
           });
 
           // 2. Calcular i actualitzar el descompte d'estoc a la pestanya 'productos'
-          const stockActual = parseInt(item.product.stock_gramos) || 0;
-          const nuevoStock = Math.max(0, stockActual - item.gramos);
+          const stockActual = parseInt(item.product.stock_gramos !== undefined ? item.product.stock_gramos : (item.product.stock !== undefined ? item.product.stock : 100)) || 0;
+          const nuevoStock = Math.max(0, stockActual - item.cantidad);
 
           const payloadStock = {
             data: {
@@ -553,7 +614,7 @@
         closeCart();
         document.getElementById('checkout-form-section').reset();
         showCartView();
-        loadProducts(); // Recarrega els productes amb el nou estoc actualitzat
+        loadProducts();
 
       } catch (err) {
         alert('Hi ha hagut un error al processar la comanda. Torna-ho a provar.');
