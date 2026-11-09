@@ -374,7 +374,6 @@
       }
     }
 
-    // Funció robusta per detectar si es ven per unitats segons la columna 'tipo' o el nom del producte
     function esProductePerUnitats(p) {
       const tipoCol = String(p.tipo || p.unidad || '').toLowerCase().trim();
       const nom = String(p.nombre || '').toLowerCase().trim();
@@ -543,6 +542,7 @@
       document.getElementById('cart-view-section').style.display = 'block';
     }
 
+    // PROCESSAMENT DE LA COMANDA: NOMÉS S'ENVIA SI EL FORMULARI ESTÀ PLè I VALIDAT
     async function processOrder(event) {
       event.preventDefault();
 
@@ -554,8 +554,14 @@
       const comprador = document.getElementById('comprador').value.trim();
       const email = document.getElementById('email').value.trim();
       const direccion = document.getElementById('direccion').value.trim();
-      const btnSend = document.getElementById('btn-send');
 
+      // VALIDACIÓ ESTRICTA: Si falta algun camp del formulari, no s'envia res ni es dispara cap correu
+      if (!comprador || !email || !direccion) {
+        alert('⚠️ Per favor, omple tots els camps obligatoris del formulari de client (Nom, Correu i Adreça) abans de confirmar.');
+        return;
+      }
+
+      const btnSend = document.getElementById('btn-send');
       btnSend.disabled = true;
       btnSend.innerText = 'Processant...';
 
@@ -582,7 +588,7 @@
           const nombreProd = item.product.nombre || 'Producte';
           const emojiProd = item.product.emoji || '🌱';
           
-          // 1. Guardar la comanda a la pestanya 'pedidos'
+          // 1. Guardar la comanda a la pestanya 'pedidos' (Només s'executa amb el formulari emplenat)
           const payloadPedido = {
             data: [{
               id: pedidoId,
@@ -620,7 +626,7 @@
           });
         }
 
-        alert('¡Comanda realitzada amb èxit i estoc actualitzat! Moltes gràcies.');
+        alert('¡Comanda realitzada amb èxit i estoc actualitzat! Ja s’han enviat les notificacions de manera correcta.');
         cart = [];
         updateCartUI();
         closeCart();
