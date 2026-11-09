@@ -374,15 +374,14 @@
       }
     }
 
-    // Detecta si es ven per unitats segons la columna 'tipo'
     function esProductePerUnitats(p) {
       const tipoCol = String(p.tipo || '').toLowerCase().trim();
       return tipoCol === 'un' || tipoCol.includes('ud') || tipoCol.includes('unitat');
     }
 
-    // Extreu i neteja el preu de la columna precio_kg (substituint comes per punts per a JavaScript)
+    // Llegeix directament de la columna 'precio' (substituint comes per punts per a JavaScript)
     function extraerPrecio(p) {
-      let val = p.precio_kg !== undefined && p.precio_kg !== "" ? p.precio_kg : 0;
+      let val = p.precio !== undefined && p.precio !== "" ? p.precio : 0;
       if (typeof val === 'string') {
         val = val.replace(',', '.');
       }
@@ -540,6 +539,7 @@
       document.getElementById('cart-view-section').style.display = 'block';
     }
 
+    // PROCESSAMENT DE LA COMANDA: NOMÉS S'ENVIA SI EL FORMULARI ESTÀ PLÈ I VALIDAT
     async function processOrder(event) {
       event.preventDefault();
 
@@ -552,7 +552,7 @@
       const email = document.getElementById('email').value.trim();
       const direccion = document.getElementById('direccion').value.trim();
 
-      // VALIDACIÓ ESTRICTA: No s'envia res si falta cap dada del client
+      // VALIDACIÓ ESTRICTA: Si falta algun camp, es bloqueja i no s'envia res ni es dispara cap correu
       if (!comprador || !email || !direccion) {
         alert('⚠️ Per favor, omple tots els camps obligatoris del formulari de client (Nom, Correu i Adreça) abans de confirmar.');
         return;
